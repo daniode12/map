@@ -1,74 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>Mapa con Imágenes</title>
+    <title>Mapa del Dron</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Manifest para PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e88e5">
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
     <style>
-        #map { height: 100vh; }
-        img.popup-image {
-            width: 250px;
-            border-radius: 8px;
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: Arial, sans-serif;
         }
+
+        header {
+            background: #1e1e1e;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #map { position: absolute; top: 50px; bottom: 0; width: 100%; }
+
+        img.popup-image {
+            width: 260px;
+            max-width: 85vw;
+            border-radius: 10px;
+            display: block;
+            margin-top: 6px;
+        }
+
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e88e5;
+            color: white;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .floating-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
+<header>📍 Mapa de Capturas del Dron</header>
 <div id="map"></div>
+<div class="floating-btn" onclick="centerMap()">📌</div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-
-// URL del JSON con la lista de imágenes
 const DATA_URL = "https://raw.githubusercontent.com/daniode12/map/main/data.json";
-
-// Inicializar mapa
 const map = L.map('map').setView([40.0, -3.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-// Capa base (OpenStreetMap)
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-}).addTo(map);
+let markers = [];
 
-// Cargar datos e insertarlos como marcadores
 async function loadMarkers() {
     try {
         const response = await fetch(DATA_URL + "?t=" + Date.now());
         const data = await response.json();
 
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
         data.forEach(item => {
             const marker = L.marker([item.lat, item.lon]).addTo(map);
-
             marker.bindPopup(`
-                <div>
-                    <strong>Imagen en (${item.lat.toFixed(6)}, ${item.lon.toFixed(6)})</strong><br>
-                    <img class="popup-image" src="${item.url}" />
-                </div>
+                <strong>Imagen en (${item.lat.toFixed(5)}, ${item.lon.toFixed(5)})</strong>
+                <img class="popup-image" src="${item.url}" />
             `);
+            markers.push(marker);
         });
-
     } catch(err) {
         console.error("Error cargando JSON:", err);
     }
 }
 
-// Ejecutar una vez al inicio
+function centerMap() {
+    if (markers.length === 0) return;
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds(), { padding: [30, 30] });
+}
+
+// Ejecutar al inicio y recargar
 loadMarkers();
+setInterval(loadMarkers, 60000);
 
-// (Opcional) Recargar automáticamente cada 60 segundos
-setInterval(() => {
-    map.eachLayer(layer => {
-        if (layer instanceof L.Marker) map.removeLayer(layer);
-    });
-    loadMarkers();
-}, 60000);
-
+// Registrar service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log('Service Worker registrado'))
+    .catch(err => console.error('Error SW:', err));
+}
 </script>
+
 </body>
 </html>
