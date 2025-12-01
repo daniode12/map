@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Mapa con Imágenes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        #map { height: 100vh; }
+        img.popup-image {
+            width: 250px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+// URL del JSON con la lista de imágenes
+const DATA_URL = "https://TU-URL-PUBLICA/data.json";
+
+// Inicializar mapa
+const map = L.map('map').setView([40.0, -3.5], 6);
+
+// Capa base (OpenStreetMap)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+}).addTo(map);
+
+// Cargar datos e insertarlos como marcadores
+async function loadMarkers() {
+    try {
+        const response = await fetch(DATA_URL + "?t=" + Date.now());
+        const data = await response.json();
+
+        data.forEach(item => {
+            const marker = L.marker([item.lat, item.lon]).addTo(map);
+
+            marker.bindPopup(`
+                <div>
+                    <strong>Imagen en (${item.lat.toFixed(6)}, ${item.lon.toFixed(6)})</strong><br>
+                    <img class="popup-image" src="${item.url}" />
+                </div>
+            `);
+        });
+
+    } catch(err) {
+        console.error("Error cargando JSON:", err);
+    }
+}
+
+// Ejecutar una vez al inicio
+loadMarkers();
+
+// (Opcional) Recargar automáticamente cada 60 segundos
+setInterval(() => {
+    map.eachLayer(layer => {
+        if (layer instanceof L.Marker) map.removeLayer(layer);
+    });
+    loadMarkers();
+}, 60000);
+
+</script>
+</body>
+</html>
