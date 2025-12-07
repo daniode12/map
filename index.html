@@ -93,7 +93,7 @@ async function loadMarkers() {
         data.forEach(item => {
             const marker = L.marker([item.lat, item.lon]).addTo(map);
             marker.bindPopup(`
-                <strong>Imagen en (${item.lat.toFixed(5)}, ${item.lon.toFixed(5)})</strong>
+                <strong>Imag en (${item.lat.toFixed(5)}, ${item.lon.toFixed(5)})</strong>
                 <p>Altitud: ${item.alt} m</p>
                 <img class="popup-image" src="${item.url}" />
             `);
