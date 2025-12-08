@@ -5,10 +5,6 @@
     <title>Mapa del Dron</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Manifest para PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e88e5">
-
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
@@ -77,11 +73,17 @@
 
 <script>
 const DATA_URL = "https://raw.githubusercontent.com/daniode12/map/main/data.json";
+
+// Crear mapa
 const map = L.map('map').setView([40.0, -3.5], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+    maxZoom: 19, 
+    attribution: '&copy; OpenStreetMap' 
+}).addTo(map);
 
 let markers = [];
 
+// Cargar marcadores
 async function loadMarkers() {
     try {
         const response = await fetch(DATA_URL + "?t=" + Date.now());
@@ -93,7 +95,7 @@ async function loadMarkers() {
         data.forEach(item => {
             const marker = L.marker([item.lat, item.lon]).addTo(map);
             marker.bindPopup(`
-                <strong>Imag en (${item.lat.toFixed(5)}, ${item.lon.toFixed(5)})</strong>
+                <strong>Imagen en (${item.lat.toFixed(5)}, ${item.lon.toFixed(5)})</strong>
                 <p>Altitud: ${item.alt} m</p>
                 <img class="popup-image" src="${item.url}" />
             `);
@@ -110,16 +112,8 @@ function centerMap() {
     map.fitBounds(group.getBounds(), { padding: [30, 30] });
 }
 
-// Ejecutar al inicio y recargar
 loadMarkers();
 setInterval(loadMarkers, 60000);
-
-// Registrar service worker
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log('Service Worker registrado'))
-    .catch(err => console.error('Error SW:', err));
-}
 </script>
 
 </body>
