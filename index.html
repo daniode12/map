@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="utf-8" />
     <title>Mapa del Dron</title>
@@ -9,36 +9,16 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
     <style>
-        body, html {
+        html, body {
             margin: 0;
             padding: 0;
             height: 100%;
             width: 100%;
-            font-family: Arial, sans-serif;
         }
 
-        header {
-            background: #1e1e1e;
-            color: white;
-            padding: 12px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            position: fixed;
+        #map {
+            height: 100%;
             width: 100%;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        #map { position: absolute; top: 50px; bottom: 0; width: 100%; }
-
-        img.popup-image {
-            width: 720px;
-            max-width: 95vw;
-            border-radius: 10px;
-            display: block;
-            margin-top: 6px;
         }
 
         .floating-btn {
@@ -55,16 +35,12 @@
             justify-content: center;
             font-size: 26px;
             cursor: pointer;
-            z-index: 1001;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            z-index: 1000;
         }
-
-        .floating-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-<header>📍 Mapa de Capturas del Dron</header>
 <div id="map"></div>
 <div class="floating-btn" onclick="centerMap()">📌</div>
 
@@ -72,44 +48,48 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
+// URL del JSON
 const DATA_URL = "https://raw.githubusercontent.com/daniode12/map/main/data.json";
 
 // Crear mapa
-const map = L.map('map').setView([40.0, -3.5], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-    maxZoom: 19, 
-    attribution: '&copy; OpenStreetMap' 
+const map = L.map('map').setView([40, -3.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
 }).addTo(map);
 
 let markers = [];
 
-// Cargar marcadores
+// Cargar puntos del JSON
 async function loadMarkers() {
     try {
         const response = await fetch(DATA_URL + "?t=" + Date.now());
         const data = await response.json();
 
+        // Eliminar marcadores anteriores
         markers.forEach(m => map.removeLayer(m));
         markers = [];
 
+        // Crear nuevos marcadores
         data.forEach(item => {
             const marker = L.marker([item.lat, item.lon]).addTo(map);
             marker.bindPopup(`
-                <strong>Imagen en (${item.lat.toFixed(5)}, ${item.lon.toFixed(5)})</strong>
-                <p>Altitud: ${item.alt} m</p>
-                <img class="popup-image" src="${item.url}" />
+                <b>Lat:</b> ${item.lat.toFixed(5)}<br>
+                <b>Lon:</b> ${item.lon.toFixed(5)}<br>
+                <b>Alt:</b> ${item.alt} m<br><br>
+                <img src="${item.url}" style="max-width:90vw;border-radius:8px;" />
             `);
             markers.push(marker);
         });
-    } catch(err) {
+    } catch (err) {
         console.error("Error cargando JSON:", err);
     }
 }
 
+// Centrar mapa en todos los marcadores
 function centerMap() {
     if (markers.length === 0) return;
     const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds(), { padding: [30, 30] });
+    map.fitBounds(group.getBounds());
 }
 
 loadMarkers();
