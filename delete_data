@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+
+import os
+import glob
+import subprocess
+
+# --- CONFIGURACIÓN ---
+CARPETA_PROYECTO = "/home/user/mavlink-bridge-pi"
+CARPETA_IMG = os.path.join(CARPETA_PROYECTO, "map/img")
+ARCHIVO_JSON = os.path.join(CARPETA_PROYECTO, "map/data.json")
+MENSAJE_COMMIT = "Limpieza de imágenes y JSON"
+
+# 1️⃣ Borrar archivo JSON si existe
+if os.path.exists(ARCHIVO_JSON):
+    os.remove(ARCHIVO_JSON)
+    print(f"✅ Archivo JSON eliminado: {ARCHIVO_JSON}")
+else:
+    print(f"ℹ️ No se encontró el JSON: {ARCHIVO_JSON}")
+
+# 2️⃣ Borrar todas las imágenes de la carpeta img
+imagenes = glob.glob(os.path.join(CARPETA_IMG, "*.jpg"))
+if imagenes:
+    for img in imagenes:
+        os.remove(img)
+        print(f"✅ Imagen eliminada: {img}")
+else:
+    print(f"ℹ️ No se encontraron imágenes en: {CARPETA_IMG}")
+
+# 3️⃣ Git add
+try:
+    subprocess.run(["git", "-C", CARPETA_PROYECTO, "add", "-A"], check=True)
+    print("🔹 Git add completado")
+except subprocess.CalledProcessError as e:
+    print(f"❌ Error en git add: {e}")
+
+# 4️⃣ Git commit
+try:
+    subprocess.run(["git", "-C", CARPETA_PROYECTO, "commit", "-m", MENSAJE_COMMIT], check=True)
+    print(f"📝 Git commit realizado: {MENSAJE_COMMIT}")
+except subprocess.CalledProcessError as e:
+    print(f"ℹ️ No hay cambios para commitear: {e}")
+
+# 5️⃣ Git push
+try:
+    subprocess.run(["git", "-C", CARPETA_PROYECTO, "push"], check=True)
+    print("🚀 Git push completado")
+except subprocess.CalledProcessError as e:
+    print(f"❌ Error en git push: {e}")
+
+print("🗑️ Limpieza y push completados")
